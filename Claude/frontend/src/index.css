@@ -1,0 +1,70 @@
+@import url("https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    @apply scroll-smooth;
+  }
+
+  body {
+    @apply bg-paper text-ink font-body antialiased;
+    background-image: radial-gradient(circle at 1px 1px, rgba(31, 36, 33, 0.035) 1px, transparent 0);
+    background-size: 18px 18px;
+  }
+
+  h1, h2, h3, h4 {
+    @apply font-display;
+  }
+
+  /* Visible keyboard focus everywhere, respecting accessibility */
+  :focus-visible {
+    outline: 2px solid #0B3D2E;
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer components {
+  .seal-stamp {
+    @apply inline-flex items-center justify-center rounded-full border-2 font-display text-[0.65rem] font-semibold uppercase tracking-wider;
+  }
+
+  .case-card {
+    @apply relative bg-paper-card border border-ink/10 rounded-sm shadow-card transition-shadow hover:shadow-stamp;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-sm bg-seal px-5 py-2.5 font-body text-sm font-semibold text-paper transition-colors hover:bg-seal-light disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-sm border border-ink/20 bg-transparent px-5 py-2.5 font-body text-sm font-semibold text-ink transition-colors hover:bg-ink/5 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-2 rounded-sm bg-maroon px-5 py-2.5 font-body text-sm font-semibold text-paper transition-colors hover:bg-maroon-dark disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .field-label {
+    @apply mb-1.5 block font-body text-xs font-semibold uppercase tracking-wide text-ink-light;
+  }
+
+  .field-input {
+    @apply w-full rounded-sm border border-ink/20 bg-paper-card px-3.5 py-2.5 font-body text-sm text-ink placeholder:text-ink/35 focus:border-seal focus:outline-none focus:ring-1 focus:ring-seal;
+  }
+
+  .field-select {
+    @apply field-input appearance-none bg-no-repeat;
+  }
+}

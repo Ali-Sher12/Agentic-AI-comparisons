@@ -1,0 +1,133 @@
+// Prisma schema for the Lost & Found system.
+// Database: SQLite, single file at backend/prisma/dev.db
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// A police HQ / building. All HQs share visibility of all items.
+model HQ {
+  id        String   @id @default(uuid())
+  name      String   @unique // e.g. "Lahore HQ"
+  city      String
+  createdAt DateTime @default(now())
+
+  policeUsers   PoliceUser[]
+  loggedItems   Item[]       @relation("LoggedByHQ")
+  holdingItems  Item[]       @relation("HoldingHQ")
+}
+
+// One police login account per HQ.
+model PoliceUser {
+  id           String   @id @default(uuid())
+  username     String   @unique
+  passwordHash String
+  hqId         String
+  createdAt    DateTime @default(now())
+
+  hq               HQ            @relation(fields: [hqId], references: [id])
+  returnedItems    Item[]        @relation("ReturnedByPolice")
+  decidedClaims    Claim[]       @relation("ClaimDecidedBy")
+}
+
+enum ItemCategory {
+  ELECTRONICS
+  DOCUMENTS
+  JEWELRY
+  CLOTHING
+  BAGS_WALLETS
+  VEHICLE
+  KEYS
+  MONEY
+  OTHER
+}
+
+enum ItemCondition {
+  NEW
+  GOOD
+  FAIR
+  DAMAGED
+  POOR
+}
+
+model Item {
+  id          String        @id @default(uuid())
+  category    ItemCategory
+  size        String        // free text, e.g. "Medium (approx 30x20cm)"
+  weight      String? // free text, e.g. "1.2 kg" — not all items are weighed
+  color       String
+  description String // detailed description
+
+  // Only meaningful when category == VEHICLE, but stored generally
+  // in case other transport items (e.g. bicycles) also carry plates.
+  numberPlate String?
+
+  condition         ItemCondition
+  recoveredFrom     String // location item was recovered from
+  recoveryTime      DateTime // when it was recovered
+  recoveryPlace     String // place of recovery (can elaborate on recoveredFrom)
+
+  // Which HQ currently physically holds the item
+  holdingHqId String
+  holdingHq   HQ     @relation("HoldingHQ", fields: [holdingHqId], references: [id])
+
+  // Which HQ originally logged the item into the system
+  loggedByHqId String
+  loggedByHq   HQ     @relation("LoggedByHQ", fields: [loggedByHqId], references: [id])
+
+  uploadDate DateTime @default(now()) // set automatically, never user-entered
+
+  // Return status — irreversible once set true
+  isReturned       Boolean   @default(false)
+  returnedAt       DateTime?
+  returnedToName   String? // police-only visibility, never exposed to public
+  returnedToContact String? // police-only visibility, never exposed to public
+  returnedByUserId String?
+  returnedByUser   PoliceUser? @relation("ReturnedByPolice", fields: [returnedByUserId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  claims Claim[]
+
+  @@index([category])
+  @@index([isReturned])
+  @@index([holdingHqId])
+}
+
+enum ClaimStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+model Claim {
+  id      String @id @default(uuid())
+  itemId  String
+  item    Item   @relation(fields: [itemId], references: [id])
+
+  // Claimant identity — used to enforce the 3-claims-per-person-per-item rule.
+  // We normalize email/CNIC into claimantKey for matching.
+  claimantKey   String // normalized email or CNIC, lowercase/stripped
+  identityType  String // "EMAIL" or "CNIC"
+  identityValue String // original, as entered
+  fullName      String
+  contactPhone  String
+  contactEmail  String?
+  proofDocumentPath String // path to uploaded proof-of-ownership file
+
+  status     ClaimStatus @default(PENDING)
+  decidedAt  DateTime?
+  decidedByUserId String?
+  decidedByUser   PoliceUser? @relation("ClaimDecidedBy", fields: [decidedByUserId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([itemId])
+  @@index([claimantKey, itemId])
+}
